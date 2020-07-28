@@ -1,7 +1,13 @@
-from flask import Flask, redirect, url_for, render_template, request
+from flask import Flask, redirect, url_for, render_template, request, session, flash
+from datetime import timedata
 
 # Instance of flask web application
 app = Flask(__name__)
+
+# Secret Key
+app.secret_key = "hello"
+
+app.permanent_session_lifetime = timedata(days=5)
 
 # Dynamic
 # @app.route("/<name>")
@@ -21,14 +27,35 @@ def test():
 @app.route("/login", methods=["POST", "GET"])
 def login():
 	if request.method == "POST":
+		session.permanent = True
 		user = request.form["name"]
-		return redirect(url_for("user", usr=user))
+		session["user"] = user
+		flash("Login Successful!")
+		return redirect(url_for("user"))
 	else:
+		if "user" in session:
+			flash("Already LoggedIn")
+			return redirect(url_for("user"))
 		return render_template("login.html")
 
-@app.route("/<usr>")
-def user(usr):
-	return "<h1>{usr}</h1>"
+@app.route("/user")
+def user():
+	if "user" in session:
+		user = session["user"]
+		# return f"<h1>{user}</h1>"
+		return render_template("user.html", user=user)
+	else:
+		flash("You are not logged in!")
+		return redirect(url_for("login"))
+
+@app.route("/logout")
+def logout():
+	# if "user" in session:
+	# 	user = session["user"]
+	# 	flash("You have been logged out, {user}", "info")
+	flash("You have been logged out", "info")
+	session.pop("user", None)
+	return redirect(url_for("login"))
 
 # @app.route("/<name>")
 # def user(name):
